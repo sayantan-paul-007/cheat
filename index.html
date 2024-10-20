@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <title>Document</title>
+</head>
+<body>
+    <h1 class="text-center py-4">
+        DSB Practical Codes
+    </h1>
+    <div class="container-sm d-flex justify-content-center py-4">
+        <div class="accordion accordion-flush col-8 " id="accordionFlushExample">
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+              Practical 1: Implementing a basic client-server communication using RPC
+            </button>
+          </h2>
+          <div id="flush-collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+            <div class="accordion-body">
+                <p>Note: Create 2 python files: client.py and server.py and first run <b>server.py</b>  and then client.py</p>
+                <b>Server.py</b>
+                <code><pre>
+
+from xmlrpc.server import SimpleXMLRPCServer
+import logging
+logging.basicConfig(level=logging.INFO)
+def add(x, y):
+    return x + y
+def subtract(x, y):
+    return x - y
+def multiply(x, y):
+    return x * y
+def divide(x, y):
+    if y == 0:
+        return "Cannot divide by zero!"
+    return x / y
+server = SimpleXMLRPCServer(("localhost", 8000))
+print("Server is listening on port 8000...")
+server.register_function(add, "add")
+server.register_function(subtract, "subtract")
+server.register_function(multiply, "multiply")
+server.register_function(divide, "divide")
+server.serve_forever()
+                </pre></code>
+                <b>Client.py</b>
+                <code><pre>
+
+import xmlrpc.client
+proxy = xmlrpc.client.ServerProxy("http://localhost:8000/")
+print("Add: ", proxy.add(10, 5))
+print("Subtract: ", proxy.subtract(10, 5))
+print("Multiply: ", proxy.multiply(10, 5))
+print("Divide: ", proxy.divide(10, 5)) 
+                </pre></code>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">
+                Practical 2: Designing a simple algorithm for clock synchronization in distributed systems
+            </button>
+          </h2>
+          <div id="flush-collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+            <div class="accordion-body">
+                <b>Code</b><br><br>
+                <code><pre>
+import time
+import random
+class Node:
+    def __init__(self, name):
+        self.name = name
+        self.local_time = time.time() * 1000  # Local clock time in milliseconds
+    def get_local_time(self):
+        return self.local_time
+    def set_local_time(self, local_time):
+        self.local_time = local_time
+    def __str__(self):
+        return f"Node({self.name})"
+    def send_sync_request(self, target_node):
+        send_time = time.time() * 1000
+        print(f"{self} sending request to {target_node} at {send_time}")
+        return target_node.receive_sync_request(self, send_time)
+    def receive_sync_request(self, sender_node, request_time):
+        receive_time = time.time() * 1000
+        print(f"{self} received request from {sender_node} at {receive_time}")
+        time.sleep(random.uniform(0.01, 0.05))  # 10ms to 50ms delay
+        response_time = time.time() * 1000
+        return SyncResponse(sender_node, request_time, receive_time, response_time)
+    def receive_sync_response(self, response):
+        receive_time = time.time() * 1000
+        print(f"{self} received response from {response.sender_node} at {receive_time}")
+        rtt = (receive_time - response.request_time) - (response.response_time - response.receive_time)
+        offset = ((response.response_time - response.request_time) - rtt) / 2     
+        print(f"{self} calculated offset: {offset} ms")
+        self.set_local_time(self.get_local_time() + offset)
+        print(f"{self} adjusted local time to: {self.get_local_time()}")
+class SyncResponse:
+    def __init__(self, sender_node, request_time, receive_time, response_time):
+        self.sender_node = sender_node
+        self.request_time = request_time
+        self.receive_time = receive_time
+        self.response_time = response_time
+def main():
+    nodeA = Node("NodeA")
+    nodeB = Node("NodeB")
+    response_from_b = nodeA.send_sync_request(nodeB)
+    nodeB.receive_sync_response(response_from_b)
+    nodeA.receive_sync_response(response_from_b)
+if __name__ == "__main__":
+    main()
+
+</pre></code>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree" aria-expanded="false" aria-controls="flush-collapseThree">
+                Practical 3: Implementing a basic consensus algorithm
+            </button>
+          </h2>
+          <div id="flush-collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+            <div class="accordion-body">
+                <b>Code</b> <br><br>
+                <code><pre>
+import random
+class PaxosNode:
+    def __init__(self, node_id):
+        self.node_id = node_id
+        self.promised_n = None  
+        self.accepted_n = None  
+        self.accepted_value = None  
+    def prepare(self, proposal_n):
+        if self.promised_n is None or proposal_n > self.promised_n:
+            self.promised_n = proposal_n
+            return True, self.accepted_n, self.accepted_value
+        return False, None, None
+    def accept(self, proposal_n, value):
+        if self.promised_n is None or proposal_n >= self.promised_n:
+            self.promised_n = proposal_n
+            self.accepted_n = proposal_n
+            self.accepted_value = value
+            return True
+        return False
+class PaxosProposer:
+    def __init__(self, proposer_id, nodes):
+        self.proposer_id = proposer_id
+        self.nodes = nodes  
+        self.proposal_counter = 0 
+    def next_proposal_number(self):
+        self.proposal_counter += 1
+        return self.proposal_counter * 100 + self.proposer_id
+    def propose(self, value):
+        majority = len(self.nodes) // 2 + 1
+        proposal_n = self.next_proposal_number()
+        promises = 0
+        highest_accepted_n = None
+        highest_accepted_value = None
+        for node in self.nodes:
+            success, accepted_n, accepted_value = node.prepare(proposal_n)
+            if success:
+                promises += 1
+                if accepted_n is not None and (highest_accepted_n is None or accepted_n > highest_accepted_n):
+                    highest_accepted_n = accepted_n
+                    highest_accepted_value = accepted_value
+        if promises >= majority:
+            if highest_accepted_value is not None:
+                value = highest_accepted_value
+            acceptances = 0
+            for node in self.nodes:
+                if node.accept(proposal_n, value):
+                    acceptances += 1
+            if acceptances >= majority:
+                print(f"Proposal accepted: {value} with proposal number {proposal_n}")
+                return value
+            else:
+                print("Proposal rejected in Accept phase.")
+        else:
+            print("Proposal rejected in Prepare phase.")
+        return None
+nodes = [PaxosNode(node_id=i) for i in range(3)]
+proposer1 = PaxosProposer(proposer_id=1, nodes=nodes)
+proposer2 = PaxosProposer(proposer_id=2, nodes=nodes)
+proposer1.propose("Value3")
+proposer2.propose("Value9")
+
+
+</pre></code>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseFour" aria-expanded="false" aria-controls="flush-collapseFour">
+                  Practical 4: Setting up a simple blockchain environment 
+              </button>
+            </h2>
+            <div id="flush-collapseFour" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                  <b>Code</b> <br><br>
+                  <code><pre>
+import hashlib
+import time
+class Block:
+    def __init__(self, index, previous_hash, timestamp, data, proof):
+        self.index = index  
+        self.previous_hash = previous_hash  
+        self.timestamp = timestamp  
+        self.data = data  
+        self.proof = proof  
+        self.hash = self.calculate_hash()  
+    def calculate_hash(self):
+        """Calculates the SHA-256 hash of the block"""
+        block_string = f"{self.index}{self.previous_hash}{self.timestamp}{self.data}{self.proof}"
+        return hashlib.sha256(block_string.encode()).hexdigest()
+class Blockchain:
+    def __init__(self):
+        self.chain = [self.create_genesis_block()]  
+        self.difficulty = 2  
+    def create_genesis_block(self):
+        return Block(0, "0", time.time(), "Genesis Block", 0)
+    def get_latest_block(self):
+        return self.chain[-1]
+    def add_block(self, new_block):
+        new_block.previous_hash = self.get_latest_block().hash
+        new_block.hash = new_block.calculate_hash()
+        self.chain.append(new_block)
+    def proof_of_work(self, block):
+        block.proof = 0
+        while not block.hash.startswith('0' * self.difficulty):
+            block.proof += 1
+            block.hash = block.calculate_hash()
+        return block.proof
+    def is_chain_valid(self):
+        for i in range(1, len(self.chain)):
+            current_block = self.chain[i]
+            previous_block = self.chain[i - 1]
+            if current_block.hash != current_block.calculate_hash():
+                print("Block", current_block.index, "has an invalid hash.")
+                return False
+            if current_block.previous_hash != previous_block.hash:
+                print("Block", current_block.index, "has an invalid previous hash.")
+                return False
+        return True
+    def print_blockchain(self):
+        for block in self.chain:
+            print(f"Block {block.index}:")
+            print(f"    Previous Hash: {block.previous_hash}")
+            print(f"    Data: {block.data}")
+            print(f"    Proof: {block.proof}")
+            print(f"    Hash: {block.hash}")
+            print("")
+if __name__ == "__main__":
+    my_blockchain = Blockchain()
+    print("Mining block 1...")
+    block1 = Block(index=1, previous_hash="", timestamp=time.time(), data="Block 1 Data", proof=0)
+    my_blockchain.proof_of_work(block1)
+    my_blockchain.add_block(block1)
+    print("Mining block 2...")
+    block2 = Block(index=2, previous_hash="", timestamp=time.time(), data="Block 2 Data", proof=0)
+    my_blockchain.proof_of_work(block2)
+    my_blockchain.add_block(block2)
+    my_blockchain.print_blockchain()
+    is_valid = my_blockchain.is_chain_valid()
+    print("Is blockchain valid?", is_valid)
+
+  
+  
+  </pre></code>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseFive" aria-expanded="false" aria-controls="flush-collapseFive">
+                Practical 5: Cryptography practices used in blockchain (hashing, digital signature)
+              </button>
+            </h2>
+            <div id="flush-collapseFive" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                  <b>Code</b> <br><br>
+                  <code><pre>
+import hashlib
+import time
+class Block:
+    def __init__(self, index, previous_hash, timestamp, data, proof):
+        self.index = index  
+        self.previous_hash = previous_hash  
+        self.timestamp = timestamp  
+        self.data = data  
+        self.proof = proof  
+        self.hash = self.calculate_hash()  
+    def calculate_hash(self):
+        """Calculates the SHA-256 hash of the block"""
+        block_string = f"{self.index}{self.previous_hash}{self.timestamp}{self.data}{self.proof}"
+        return hashlib.sha256(block_string.encode()).hexdigest()
+class Blockchain:
+    def __init__(self):
+        self.chain = [self.create_genesis_block()]  
+        self.difficulty = 2  
+    def create_genesis_block(self):
+        return Block(0, "0", time.time(), "Genesis Block", 0)
+    def get_latest_block(self):
+        return self.chain[-1]
+    def add_block(self, new_block):
+        new_block.previous_hash = self.get_latest_block().hash
+        new_block.hash = new_block.calculate_hash()
+        self.chain.append(new_block)
+    def proof_of_work(self, block):
+        block.proof = 0
+        while not block.hash.startswith('0' * self.difficulty):
+            block.proof += 1
+            block.hash = block.calculate_hash()
+        return block.proof
+    def is_chain_valid(self):
+        for i in range(1, len(self.chain)):
+            current_block = self.chain[i]
+            previous_block = self.chain[i - 1]
+            if current_block.hash != current_block.calculate_hash():
+                print("Block", current_block.index, "has an invalid hash.")
+                return False
+            if current_block.previous_hash != previous_block.hash:
+                print("Block", current_block.index, "has an invalid previous hash.")
+                return False
+        return True
+    def print_blockchain(self):
+        for block in self.chain:
+            print(f"Block {block.index}:")
+            print(f"    Previous Hash: {block.previous_hash}")
+            print(f"    Data: {block.data}")
+            print(f"    Proof: {block.proof}")
+            print(f"    Hash: {block.hash}")
+            print("")
+if __name__ == "__main__":
+    my_blockchain = Blockchain()
+    print("Mining block 1...")
+    block1 = Block(index=1, previous_hash="", timestamp=time.time(), data="Block 1 Data", proof=0)
+    my_blockchain.proof_of_work(block1)
+    my_blockchain.add_block(block1)
+    print("Mining block 2...")
+    block2 = Block(index=2, previous_hash="", timestamp=time.time(), data="Block 2 Data", proof=0)
+    my_blockchain.proof_of_work(block2)
+    my_blockchain.add_block(block2)
+    my_blockchain.print_blockchain()
+    is_valid = my_blockchain.is_chain_valid()
+    print("Is blockchain valid?", is_valid)
+
+  
+  
+  </pre></code>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseSix" aria-expanded="false" aria-controls="flush-collapseSix">
+                Practical 6: Creating a simple blockchain to understand blocks, chains, and mining
+              </button>
+            </h2>
+            <div id="flush-collapseSix" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                  <b>Code</b> <br><br>
+                  <code><pre>
+import hashlib
+import time
+class Block:
+    def __init__(self, index, previous_hash, data, timestamp=None):
+        self.index = index
+        self.previous_hash = previous_hash
+        self.data = data
+        self.timestamp = timestamp or time.time()
+        self.nonce = 0
+        self.hash = self.compute_hash()
+    def compute_hash(self):
+        block_string = str(self.index) + str(self.previous_hash) + str(self.data) + str(self.timestamp) + str(self.nonce)
+        return hashlib.sha256(block_string.encode()).hexdigest()
+    def mine_block(self, difficulty):
+        while self.hash[:difficulty] != '0' * difficulty:
+            self.nonce += 1
+            self.hash = self.compute_hash()
+        print(f"Block mined with nonce: {self.nonce}, Hash: {self.hash}")
+class Blockchain:
+    def __init__(self):
+        self.chain = []
+        self.difficulty = 4  # Difficulty for mining
+    def create_genesis_block(self):
+        genesis_block = Block(0, "0", "Genesis Block")
+        self.chain.append(genesis_block)
+    def get_latest_block(self):
+        return self.chain[-1]
+    def add_block(self, new_block):
+        new_block.previous_hash = self.get_latest_block().hash
+        new_block.mine_block(self.difficulty)  # Simulate mining
+        self.chain.append(new_block)
+# Initialize the blockchain
+blockchain = Blockchain()
+blockchain.create_genesis_block()
+# Add a new block
+new_block = Block(1, "", "Some transaction data")
+blockchain.add_block(new_block)
+# Add another block
+another_block = Block(2, "", "More transaction data")
+blockchain.add_block(another_block)
+# Display blockchain information
+for block in blockchain.chain:
+    print(f"Block {block.index}:")
+    print(f"Data: {block.data}")
+    print(f"Timestamp: {block.timestamp}")
+    print(f"Previous Hash: {block.previous_hash}")
+    print(f"Hash: {block.hash}\n")  
+  
+  </pre></code>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseSeven" aria-expanded="false" aria-controls="flush-collapseSeven">
+                  Practical 7: Implementing a basic Proof of Work (PoW) consensus mechanism 
+              </button>
+            </h2>
+            <div id="flush-collapseSeven" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                  <b>Code</b> <br><br>
+                  <code><pre>
+import hashlib
+import time
+
+class Block:
+    def __init__(self, index, previous_hash, data, timestamp=None):
+        self.index = index
+        self.previous_hash = previous_hash
+        self.data = data
+        self.timestamp = timestamp or time.time()
+        self.nonce = 0
+        self.hash = self.compute_hash()
+
+    def compute_hash(self):
+        block_string = str(self.index) + str(self.previous_hash) + str(self.data) + str(self.timestamp) + str(self.nonce)
+        return hashlib.sha256(block_string.encode()).hexdigest()
+
+    def mine_block(self, difficulty):
+        """
+        Mines the block by finding a hash that starts with 'difficulty' number of leading zeros.
+        """
+        target = '0' * difficulty
+        while self.hash[:difficulty] != target:
+            self.nonce += 1
+            self.hash = self.compute_hash()
+
+        print(f"Block mined: {self.hash} (Nonce: {self.nonce})")
+class Blockchain:
+    def __init__(self):
+        self.chain = []
+        self.difficulty = 4  # Difficulty for mining (leading zeros in the hash)
+
+    def create_genesis_block(self):
+        """
+        Generates the first block in the blockchain, called the genesis block.
+        """
+        genesis_block = Block(0, "0", "Genesis Block")
+        genesis_block.mine_block(self.difficulty)
+        self.chain.append(genesis_block)
+
+    def get_latest_block(self):
+        return self.chain[-1]
+
+    def add_block(self, new_block):
+        """
+        Adds a new block to the chain after mining it.
+        """
+        new_block.previous_hash = self.get_latest_block().hash
+        new_block.mine_block(self.difficulty)
+        self.chain.append(new_block)
+
+# Initialize the blockchain and create the genesis block
+blockchain = Blockchain()
+blockchain.create_genesis_block()
+
+
+# Add a new block
+new_block = Block(1, "", "Some transaction data")
+blockchain.add_block(new_block)
+
+# Add another block
+another_block = Block(2, "", "More transaction data")
+blockchain.add_block(another_block)
+# Display blockchain information
+for block in blockchain.chain:
+    print(f"Block {block.index}:")
+    print(f"Data: {block.data}")
+    print(f"Hash: {block.hash}")
+    print(f"Previous Hash: {block.previous_hash}")
+    print(f"Nonce: {block.nonce}\n")
+  </pre></code>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseEight" aria-expanded="false" aria-controls="flush-collapseEight">
+                  Practical 8: Writing and deploying a simple smart contract using Solidity 
+              </button>
+            </h2>
+            <div id="flush-collapseEight" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                  <b>Code</b> <br><br>
+                  <code><pre>
+// SPDX-License-Identifier: GPL-3.0 
+pragma solidity >= 0.4.16 < 0.9.0;
+
+contract Test
+{ 
+	
+	// Declaring state variables 
+	uint public var1;
+	uint public var2;
+	uint public sum;
+
+	// Defining public function 
+	// that sets the value of 
+	// the state variable 
+	function set(uint x, uint y) public
+	{ 
+		var1 = x;
+		var2 = y;
+		sum=var1+var2;
+	} 
+	
+	// Defining function to 
+	// print the sum of 
+	// state variables 
+	function get( 
+	) public view returns (uint) { 
+		return sum; 
+	} 
+}
+
+  </pre></code>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseNine" aria-expanded="false" aria-controls="flush-collapseNine">
+                  Practical 9: Developing a simple DApp with a web interface 
+              </button>
+            </h2>
+            <div id="flush-collapseNine" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                  <b>Code</b> <br><br>
+                  <p>Step 1: Install NodeJS, Ganache from their website</p>
+                  <p>Step 2: Type <code>npm install -g truffle</code> and then type <code>npm install -g http-server</code> in CMD (Run as Administrator)</p>
+                  <p>Step 3: Go to D drive and create a folder and open that folder in VS Code </p>
+                  <p>Step 4: In terminal below, type <code>truffle init</code></p>
+                  <p>Step 5: Make new Solidity file name it <b>SimpleStorage.sol </b> and paste the code given</p>
+                  <p><code><pre>
+                    pragma solidity ^0.8.0;
+
+                    contract SimpleStorage {
+                        string public message;
+                    
+                        function setMessage(string memory newMessage) public {
+                            message = newMessage;
+                        }
+                    
+                        function getMessage() public view returns (string memory) {
+                            return message;
+                        }
+                    }
+                    </pre></code></p>
+                    <p>Step 6: Paste the following code in <b>truffle-config.js</b></p>
+                    <p><code><pre>
+                        module.exports = {
+                            networks: {
+                                development: {
+                                    host: "127.0.0.1",
+                                    port: 7545,
+                                    network_id: "*",
+                                },
+                            },
+                            compilers: {
+                                solc: {
+                                    version: "0.8.0",
+                                },
+                            },
+                        };
+                        
+                    </pre></code></p>
+                    <p>Step 7: In <b>Migrations folder</b>, create a file named <b>2_deploy_contracts.js </b> and paste the code</p>
+                    <p><code><pre>
+                        const SimpleStorage = artifacts.require("SimpleStorage");
+
+                        module.exports = function (deployer) {
+                            deployer.deploy(SimpleStorage);
+                        };
+
+                    </pre></code></p>
+                    <p>Step 8:In terminal below, type <code>truffle migrate</code> </p>
+                    <p>Step 9: Make a new <b>HTML file</b> in the main folder(one you created) and name it <b>index.html</b> and paste the code</p>
+                    <p>
+                        <code><pre>
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;Simple DApp&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Simple DApp&lt;/h1&gt;
+    &lt;input type="text" id="messageInput" placeholder="Enter message" /&gt;
+    &lt;button onclick="setMessage()"&gt;Set Message&lt;/button&gt;
+    &lt;button onclick="getMessage()"&gt;Get Message&lt;/button&gt;
+    &lt;p id="displayMessage"&gt;&lt;/p&gt;
+
+    &lt;script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.3.0/dist/web3.min.js"&gt;&lt;/script&gt;
+    &lt;script src="app.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;    
+                        </pre></code>
+                    </p>
+                    <p>Step 10: Make a new <b>Javascript file</b> in the main folder(one you created) and name it <b>app.js</b> and paste the code</p>
+                    <p><code><pre>
+let web3;
+let contract;
+const contractAddress = 'YOUR_DEPLOYED_CONTRACT_ADDRESS';
+const abi = /* ABI from your compiled contract */;
+
+window.addEventListener('load', async () => {
+    if (window.ethereum) {
+        web3 = new Web3(window.ethereum);
+        await window.ethereum.enable();
+    } else {
+        alert('Please install MetaMask!');
+    }
+    contract = new web3.eth.Contract(abi, contractAddress);
+});
+
+async function setMessage() {
+    const message = document.getElementById('messageInput').value;
+    const accounts = await web3.eth.getAccounts();
+    await contract.methods.setMessage(message).send({ from: accounts[0] });
+}
+
+async function getMessage() {
+    const message = await contract.methods.getMessage().call();
+    document.getElementById('displayMessage').innerText = message;
+}
+
+                    </pre></code></p>
+                    <p>Step 11: In terminal below, type <code>http-server</code></p>
+                
+
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTen" aria-expanded="false" aria-controls="flush-collapseTen">
+                  Practical 10: Exploring Ethereum development tools (Truffle, Ganache)
+              </button>
+            </h2>
+            <div id="flush-collapseTen" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                  <p>Yeh wala net se chaapo</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseeleven" aria-expanded="false" aria-controls="flush-collapseeleven">
+                  Practical 11: Setting up a basic Hyperledger Fabric network
+              </button>
+            </h2>
+            <div id="flush-collapseeleven" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+              <p>Yeh PDF mein Chaincode ke pehle steps sirf (Step 1 sirf)</p>
+              <a href="./Hyperledger_Chaincode_Deployment_Windows_Guide[1].pdf" download=""><button >Practical 11</button>  </a>
+                
+            </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapsetwelve" aria-expanded="false" aria-controls="flush-collapsetwelve">
+                  Practical 12: Developing and deploying a simple chaincode on Hyperledger
+              </button>
+            </h2>
+            <div id="flush-collapsetwelve" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+              <p>Yeh PDF se steps chepo (kantaal aa rha hai)</p>
+              <a href="./Hyperledger_Chaincode_Deployment_Windows_Guide[1].pdf" download=""><button >Practical 12</button>  </a>
+                
+            </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThirteen" aria-expanded="false" aria-controls="flush-collapseThirteen">
+                  Practical 13: Analyzing a use case of blockchain in financial services
+              </button>
+            </h2>
+            <div id="flush-collapseThirteen" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+              <p>Google kar koi ek random sa chep do</p>    
+            </div>
+            </div>
+          </div>
+        
+          
+          
+           
+   
+    
+    </div>
+    
+
+
+
+
+   
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+</html>
