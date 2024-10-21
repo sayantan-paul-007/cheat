@@ -12,7 +12,7 @@
         DSB Practical Codes
     </h1>
     <div class="container-sm d-flex justify-content-center py-4">
-        <div class="accordion accordion-flush col-8 " id="accordionFlushExample">
+        <div class="accordion accordion-flush col-12 col-md-8 " id="accordionFlushExample">
         <div class="accordion-item">
           <h2 class="accordion-header">
             <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
@@ -285,72 +285,46 @@ if __name__ == "__main__":
               <div class="accordion-body">
                   <b>Code</b> <br><br>
                   <code><pre>
-import hashlib
-import time
-class Block:
-    def __init__(self, index, previous_hash, timestamp, data, proof):
-        self.index = index  
-        self.previous_hash = previous_hash  
-        self.timestamp = timestamp  
-        self.data = data  
-        self.proof = proof  
-        self.hash = self.calculate_hash()  
-    def calculate_hash(self):
-        """Calculates the SHA-256 hash of the block"""
-        block_string = f"{self.index}{self.previous_hash}{self.timestamp}{self.data}{self.proof}"
-        return hashlib.sha256(block_string.encode()).hexdigest()
-class Blockchain:
-    def __init__(self):
-        self.chain = [self.create_genesis_block()]  
-        self.difficulty = 2  
-    def create_genesis_block(self):
-        return Block(0, "0", time.time(), "Genesis Block", 0)
-    def get_latest_block(self):
-        return self.chain[-1]
-    def add_block(self, new_block):
-        new_block.previous_hash = self.get_latest_block().hash
-        new_block.hash = new_block.calculate_hash()
-        self.chain.append(new_block)
-    def proof_of_work(self, block):
-        block.proof = 0
-        while not block.hash.startswith('0' * self.difficulty):
-            block.proof += 1
-            block.hash = block.calculate_hash()
-        return block.proof
-    def is_chain_valid(self):
-        for i in range(1, len(self.chain)):
-            current_block = self.chain[i]
-            previous_block = self.chain[i - 1]
-            if current_block.hash != current_block.calculate_hash():
-                print("Block", current_block.index, "has an invalid hash.")
-                return False
-            if current_block.previous_hash != previous_block.hash:
-                print("Block", current_block.index, "has an invalid previous hash.")
-                return False
-        return True
-    def print_blockchain(self):
-        for block in self.chain:
-            print(f"Block {block.index}:")
-            print(f"    Previous Hash: {block.previous_hash}")
-            print(f"    Data: {block.data}")
-            print(f"    Proof: {block.proof}")
-            print(f"    Hash: {block.hash}")
-            print("")
-if __name__ == "__main__":
-    my_blockchain = Blockchain()
-    print("Mining block 1...")
-    block1 = Block(index=1, previous_hash="", timestamp=time.time(), data="Block 1 Data", proof=0)
-    my_blockchain.proof_of_work(block1)
-    my_blockchain.add_block(block1)
-    print("Mining block 2...")
-    block2 = Block(index=2, previous_hash="", timestamp=time.time(), data="Block 2 Data", proof=0)
-    my_blockchain.proof_of_work(block2)
-    my_blockchain.add_block(block2)
-    my_blockchain.print_blockchain()
-    is_valid = my_blockchain.is_chain_valid()
-    print("Is blockchain valid?", is_valid)
+import math
+def gcd(a, h):
+    temp = 0
+    while(1):
+        temp = a % h
+        if (temp == 0):
+            return h
+        a = h
+        h = temp
 
-  
+p = 3
+q = 7
+n = p*q
+e = 2
+phi = (p-1)*(q-1)
+
+while (e < phi):
+
+    
+    if(gcd(e, phi) == 1):
+        break
+    else:
+        e = e+1
+
+k = 2
+d = (1 + (k*phi))/e
+
+
+msg = 12.0
+
+print("Message data = ", msg)
+
+c = pow(msg, e)
+c = math.fmod(c, n)
+print("Encrypted data = ", c)
+
+m = pow(c, d)
+m = math.fmod(m, n)
+print("Original Message Sent = ", m)
+
   
   </pre></code>
               </div>
